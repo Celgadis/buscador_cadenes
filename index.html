@@ -1,15 +1,22 @@
 <input type="file" id="fileInput" multiple />
 <script>
+  const listaRegex = [
+    /rgb[^)]+[)]/,
+    /\$[^; ]+/,
+    /#[^;^ ]+/,
+    /.{3,}/
+  ];
+
   const palabrasClave = [
     {
       palabra: "color:",
       contador: 0,
-      resultados: []
+      resultados: {}
     },
     {
       palabra: "border:",
       contador: 0,
-      resultados: []
+      resultados: {}
     }];
   // const palabrasClave = ['color', 'border', 'fallo']; // Cambia esto según tus necesidades
 
@@ -35,9 +42,41 @@
         let palabra = clave.palabra;
         if (linea.toLowerCase().includes(palabra.toLowerCase())) {
           let resultado = `[${archivo.name}] Línea ${i + 1}: ${linea}`;
-          console.log(resultado);
+          //console.log(resultado);
           clave.contador++;
-          clave.resultados.push(resultado);
+          let valor = linea.split(":");
+          valor = valor[1].split("\r");
+          valor = valor[0].trim();
+          let coincidencia = null;
+          for (const regex of listaRegex) {
+            coincidencia = valor.match(regex)
+            if (coincidencia) {
+              coincidencia = coincidencia[0]
+              //console.log("coincidencia:", coincidencia)
+              break;
+            }
+          }
+          
+          
+          /*if(clave.resultados[coincidencia]==undefined){
+              
+        }else{
+          contador=clave.resultados[coincidencia].contador;
+          console.log("trobat "+coincidencia);
+        }*/
+          let existe=clave.resultados.hasOwnProperty(coincidencia);
+          if (!existe) {
+            clave.resultados[coincidencia] =   {
+              linea: resultado,
+              valor: coincidencia,
+              contador: 1
+            }
+          } else {
+            
+            clave.resultados[coincidencia].contador++;
+          }
+
+
         }
       }
     }
@@ -56,27 +95,40 @@
   }
 
 
-    async function descargarResultados() {
-      // let resultado=JSON.stringify(palabrasClave)
-      // 1. Convertimos el array en un string
-      const contenido = JSON.stringify(palabrasClave)//resultados.join('\n');
+  async function descargarResultados() {
 
-      // 2. Creamos un blob con tipo texto
-      const blob = new Blob([contenido], { type: 'text/plain' });
+    // 1. Convertimos el array en un string
+    const contenido = JSON.stringify(palabrasClave)
 
-      // 3. Creamos un URL para el blob
-      const url = URL.createObjectURL(blob);
+    // 2. Creamos un blob con tipo texto
+    const blob = new Blob([contenido], { type: 'text/plain' });
 
-      // 4. Creamos un <a> y simulamos un clic
-      const enlace = document.createElement('a');
-      enlace.href = url;
-      enlace.download = 'resultados.json';
-      document.body.appendChild(enlace);
-      enlace.click();
+    // 3. Creamos un URL para el blob
+    const url = URL.createObjectURL(blob);
 
-      // 5. Limpiamos
-      document.body.removeChild(enlace);
-      URL.revokeObjectURL(url);
-    }
+    // 4. Creamos un <a> y simulamos un clic
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = 'resultados.json';
+    document.body.appendChild(enlace);
+    enlace.click();
+
+    // 5. Limpiamos
+    document.body.removeChild(enlace);
+    URL.revokeObjectURL(url);
+  }
+
+  function reemplazarRgbPorHexRgb(texto) {
+    return texto.replace(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\s*\)/g,
+      (_, r, g, b, a) => {
+        const hex =
+          "#" +
+          [r, g, b]
+            .map((x) => parseInt(x).toString(16).padStart(2, "0"))
+            .join("");
+
+        return a !== undefined ? `rgba(${hex}, ${a})` : `rgb(${hex})`;
+      });
+  }
 
 </script>
