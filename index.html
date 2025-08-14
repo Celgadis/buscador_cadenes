@@ -1,0 +1,50 @@
+<input type="file" id="fileInput" multiple />
+<script>
+  /*const palabrasClave = [
+      {palabra: "color", 
+        contador:0,
+        resultados:""
+      },
+      {palabra: "border", 
+        contador:0,
+        resultados:""
+      }]; */
+      // const palabrasClave = ['color', 'border', 'fallo']; // Cambia esto según tus necesidades
+
+    document.getElementById('fileInput').addEventListener('change', async (event) => {
+    const archivos = Array.from(event.target.files);
+
+    for (const archivo of archivos) {
+      await procesarArchivo(archivo);
+    }
+  });
+
+  // Función que lee un archivo y busca las palabras clave línea por línea
+  async function procesarArchivo(archivo) {
+    const contenido = await leerArchivoComoTexto(archivo);
+    const lineas = contenido.split('\n');
+
+    console.log(`📄 Procesando archivo: ${archivo.name}`);
+
+    for (let i = 0; i < lineas.length; i++) {
+      const linea = lineas[i];
+      for (const palabra of palabrasClave) {
+        if (linea.toLowerCase().includes(palabra.toLowerCase())) {
+          console.log(`🔍 [${archivo.name}] Línea ${i + 1}: ${linea}`);
+        }
+      }
+    }
+  }
+
+  // Función para leer archivo como texto usando FileReader y promesa
+  function leerArchivoComoTexto(archivo) {
+    return new Promise((resolve, reject) => {
+      const lector = new FileReader();
+
+      lector.onload = (e) => resolve(e.target.result);
+      lector.onerror = (e) => reject(e);
+
+      lector.readAsText(archivo);
+    });
+  }
+</script>
