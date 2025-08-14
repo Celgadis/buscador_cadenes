@@ -1,22 +1,25 @@
 <input type="file" id="fileInput" multiple />
 <script>
-  /*const palabrasClave = [
-      {palabra: "color", 
-        contador:0,
-        resultados:""
-      },
-      {palabra: "border", 
-        contador:0,
-        resultados:""
-      }]; */
-      // const palabrasClave = ['color', 'border', 'fallo']; // Cambia esto según tus necesidades
+  const palabrasClave = [
+    {
+      palabra: "color:",
+      contador: 0,
+      resultados: []
+    },
+    {
+      palabra: "border:",
+      contador: 0,
+      resultados: []
+    }];
+  // const palabrasClave = ['color', 'border', 'fallo']; // Cambia esto según tus necesidades
 
-    document.getElementById('fileInput').addEventListener('change', async (event) => {
+  document.getElementById('fileInput').addEventListener('change', async (event) => {
     const archivos = Array.from(event.target.files);
 
     for (const archivo of archivos) {
       await procesarArchivo(archivo);
     }
+    await descargarResultados();
   });
 
   // Función que lee un archivo y busca las palabras clave línea por línea
@@ -28,9 +31,13 @@
 
     for (let i = 0; i < lineas.length; i++) {
       const linea = lineas[i];
-      for (const palabra of palabrasClave) {
+      for (const clave of palabrasClave) {
+        let palabra = clave.palabra;
         if (linea.toLowerCase().includes(palabra.toLowerCase())) {
-          console.log(`🔍 [${archivo.name}] Línea ${i + 1}: ${linea}`);
+          let resultado = `[${archivo.name}] Línea ${i + 1}: ${linea}`;
+          console.log(resultado);
+          clave.contador++;
+          clave.resultados.push(resultado);
         }
       }
     }
@@ -47,4 +54,29 @@
       lector.readAsText(archivo);
     });
   }
+
+
+    async function descargarResultados() {
+      // let resultado=JSON.stringify(palabrasClave)
+      // 1. Convertimos el array en un string
+      const contenido = JSON.stringify(palabrasClave)//resultados.join('\n');
+
+      // 2. Creamos un blob con tipo texto
+      const blob = new Blob([contenido], { type: 'text/plain' });
+
+      // 3. Creamos un URL para el blob
+      const url = URL.createObjectURL(blob);
+
+      // 4. Creamos un <a> y simulamos un clic
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = 'resultados.json';
+      document.body.appendChild(enlace);
+      enlace.click();
+
+      // 5. Limpiamos
+      document.body.removeChild(enlace);
+      URL.revokeObjectURL(url);
+    }
+
 </script>
