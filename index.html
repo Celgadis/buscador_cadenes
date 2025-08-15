@@ -1,20 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <style>
-    .card{
+    .card {
       display: flex;
       flex-direction: column;
+     
     }
-    .coincidencia{
+    .resultado{ display:flex;
+      flex-direction: column;
+      gap:20px;}
+
+    .coincidencia {
       display: flex;
       width: 100%;
-      gap:30px
+      gap: 30px
     }
-    .muestra{
+
+    .muestra {
+       gap:20px;
       height: 20px;
       width: 20px;
       border: 2px solid black;
@@ -22,9 +30,10 @@
     }
   </style>
 </head>
+
 <body>
   <h3>Lista de archivos scss a revisar:</h3>
-  <input type="file" id="fileInput" multiple />  
+  <input type="file" id="fileInput" multiple />
   <div class="palabras">
     <ul>
 
@@ -33,15 +42,28 @@
   <div class="resultado"></div>
   <div class="molde">
     <div class="card">
-      <div class="coincidencia"><span class="muestra"></span><span class="valor"></span><span class="contador"></span><span><label>selector de color<input type="color" name="color" class="picker"></label><input type="text" name="hexcolor"></span><span><label>modificar:<input type="checkbox" name="modificar"></label></span>
+      <div class="coincidencia">
+        <span class="muestra"></span>
+        <span class="valor"></span>
+        <span class="contador"></span>
+        <span>
+          <label>selector de color<input type="color" name="color" class="picker"></label>
+          <input type="text" name="hexcolor" class="hexcolor">
+        </span>
+        <span>
+          <label>modificar:<input type="checkbox" class="modificar"></label>
+        </span>
+      </div>
       <div class="contenedor-coincidencias">
-          <ul class="coincidencias">
-          </ul>
+
+        <ul class="coincidencias">
+        </ul>
       </div>
     </div>
 
   </div>
 </body>
+
 </html>
 
 
@@ -65,8 +87,8 @@
       contador: 0,
       resultados: {}
     }];
-  // const palabrasClave = ['color', 'border', 'fallo']; // Cambia esto según tus necesidades
-    const listaResultados={};
+
+  const listaResultados = {};
 
   document.getElementById('fileInput').addEventListener('change', async (event) => {
     const archivos = Array.from(event.target.files);
@@ -77,6 +99,8 @@
     //await descargarResultados();
     await mostrarResultados();
   });
+
+
 
   // Función que lee un archivo y busca las palabras clave línea por línea
   async function procesarArchivo(archivo) {
@@ -97,70 +121,72 @@
           valor = valor[1].split("\r");
           valor = valor[0].trim();
           let coincidencia = null;
-          let regexIndex=0
-          let original=null;
-          let cambiado=null
+          let regexIndex = 0
+          let original = null;
+          let cambiado = null
           //filtrado a traves de las regex
           for (const regex of listaRegex) {
             coincidencia = valor.match(regex)
             if (coincidencia) {
               coincidencia = coincidencia[0]
-              if(regexIndex==0){//si es un color rgb se convierte a hex
-                original=coincidencia; //guardo el valor de coincidencia original
-                coincidencia=reemplazarRgbPorHexRgb(coincidencia);
-                cambiado=coincidencia; //guardo el valor cambiado a hexadecimal dentro del rgb
-                coincidencia=coincidencia.match(listaRegex[2])[0]
+              if (regexIndex == 0) {//si es un color rgb se convierte a hex
+                original = coincidencia; //guardo el valor de coincidencia original
+                coincidencia = reemplazarRgbPorHexRgb(coincidencia);
+                cambiado = coincidencia; //guardo el valor cambiado a hexadecimal dentro del rgb
+                coincidencia = coincidencia.match(listaRegex[2])[0]
               }
-              if(regexIndex==2){
-                coincidencia=coincidencia.toLowerCase();
-                coincidencia=expandirHex(coincidencia);
+              if (regexIndex == 2) {
+                original = coincidencia;
+                coincidencia = coincidencia.toLowerCase();
+                coincidencia = expandirHex(coincidencia);
+                //cambiado=coincidencia;
               }
               //console.log("coincidencia:", coincidencia)
               break;
             }
             regexIndex++
           }
-          if(!coincidencia){
+          if (!coincidencia) {
             break;
           }
           //preparamos la clave de orden con valores hsl para poder ver colores similares juntos
-          let regexHex=/^#[0-9A-Fa-f]{3,6}$/;
+          let regexHex = /^#[0-9A-Fa-f]{3,6}$/;
           // console.log("linia",linea)
           // console.log("coincidencia",coincidencia)
-          let hsl=coincidencia.match(regexHex)?hexToHSL(coincidencia):null
+          let hsl = coincidencia.match(regexHex) ? hexToHSL(coincidencia) : null
           console.log(listaResultados);
-          let existe=listaResultados.hasOwnProperty(coincidencia);
+          let existe = listaResultados.hasOwnProperty(coincidencia);
           //si no se guardo esta coincidencia se crea, si no solo se aumenta el contador y se guarda la informacion de posicion
           if (!existe) {
-            listaResultados[coincidencia] =   {
+            listaResultados[coincidencia] = {
               valor: coincidencia,
               contador: 1,
-              coincidencias:[],
-              tipo:regexIndex,
-              hsl:hsl
+              coincidencias: [],
+              tipo: regexIndex,
+              hsl: hsl
             }
             listaResultados[coincidencia].coincidencias.push({
-                linea:resultado,
-                archivo:archivo.name,
-                pos: i,
-                valor:linea,
-                tipo:regexIndex,
-                coincidencia:coincidencia,
-                original:original,
-                cambiado:cambiado
-              });
+              linea: resultado,
+              archivo: archivo.name,
+              pos: i,
+              valor: linea,
+              tipo: regexIndex,
+              coincidencia: coincidencia,
+              original: original,
+              cambiado: cambiado
+            });
           } else {
             listaResultados[coincidencia].contador++;
             listaResultados[coincidencia].coincidencias.push({
-                linea:resultado,
-                archivo:archivo.name,
-                pos: i,
-                valor:linea,
-                tipo:regexIndex,
-                coincidencia:coincidencia,
-                original:original,
-                cambiado:cambiado
-              });
+              linea: resultado,
+              archivo: archivo.name,
+              pos: i,
+              valor: linea,
+              tipo: regexIndex,
+              coincidencia: coincidencia,
+              original: original,
+              cambiado: cambiado
+            });
           }
 
 
@@ -218,59 +244,78 @@
       });
   }
 
-  async function mostrarResultados(){
-    for(const palabra of palabrasClave){
-      const contenedorPalabra=document.querySelector(".palabras ul")
-      const node =document.createElement("li")
-      node.innerText=`${palabra.palabra} - ${palabra.contador}` 
+  async function mostrarResultados() {
+    for (const palabra of palabrasClave) {
+      const contenedorPalabra = document.querySelector(".palabras ul")
+      const node = document.createElement("li")
+      node.innerText = `${palabra.palabra} - ${palabra.contador}`
       contenedorPalabra.appendChild(node);
     }
-    let total=Object.keys(listaResultados).length
-    console.log(total)
-    let totalHsl=0
-    if(total>1){
-      const contenedorPalabra=document.querySelector(".palabras ul")
-      const node =document.createElement("li")
-      node.innerText=`colores distintos - ${total}` 
+    let total = Object.keys(listaResultados).length
+    //console.log(total)
+    let totalHsl = 0
+    if (total > 1) {
+      const contenedorPalabra = document.querySelector(".palabras ul")
+      const node = document.createElement("li")
+      node.innerText = `colores distintos - ${total}`
       contenedorPalabra.appendChild(node);
-    
+
     }
-    
-    const contenedor=document.querySelector(".resultado");
-    const lista=ordenar(listaResultados);
-    for(const coincidencia of Object.values(lista)){
-      console.log(coincidencia)
-      if(coincidencia.hasOwnProperty("hsl") && coincidencia.hsl!=null){
+
+    const contenedor = document.querySelector(".resultado");
+    const lista = ordenar(listaResultados);
+    for (const coincidencia of Object.values(lista)) {
+      //console.log(coincidencia)
+      if (coincidencia.hasOwnProperty("hsl") && coincidencia.hsl != null) {
         totalHsl++
       }
-      const card=document.querySelector(".molde .card").cloneNode(true);
-      card.querySelector(".valor").innerText=coincidencia.valor;
-      card.querySelector(".picker").id=coincidencia.valor;
-      card.querySelector(".picker").value=coincidencia.valor;
-      let veces=coincidencia.contador==1?"vez":"veces";
-      card.querySelector(".contador").innerText=`encontrado ${coincidencia.contador} ${veces}`;
-      card.querySelector(".muestra").style.backgroundColor=coincidencia.valor
+      const card = document.querySelector(".molde .card").cloneNode(true);
+      card.querySelector(".valor").innerText = coincidencia.valor;
+      //colorpicker y input
+      const picker=card.querySelector(".picker");
+      picker.id = coincidencia.valor;
+      picker.value = coincidencia.valor;
+      console.log(picker.value)
+      const hexinput=card.querySelector(".hexcolor");
+      hexinput.value=picker.value
+      const modificar=card.querySelector(".modificar");
+      console.log(modificar)
+      //eventos del picker y input
+      picker.addEventListener("change",()=>{
+        hexinput.value=picker.value;
+        modificar.checked=true;
+      })
+      hexinput.addEventListener("focusout",()=>{
+        picker.value=hexinput.value;
+        modificar.checked=true;
+      })
+
+
+
+      let veces = coincidencia.contador == 1 ? "vez" : "veces";
+      card.querySelector(".contador").innerText = `encontrado ${coincidencia.contador} ${veces}`;
+      card.querySelector(".muestra").style.backgroundColor = coincidencia.valor
       //console.log(coincidencia);
-      for(const linea of coincidencia.coincidencias){
-        const nodo=document.createElement("li");
-        nodo.innerText=linea.linea
+      for (const linea of coincidencia.coincidencias) {
+        const nodo = document.createElement("li");
+        nodo.innerText = linea.linea
         card.querySelector(".coincidencias").appendChild(nodo);
       }
       contenedor.appendChild(card);
     }
-    if(totalHsl>0){
-        const contenedorPalabra=document.querySelector(".palabras ul")
-        const node =document.createElement("li")
-        node.innerText=`colores reales - ${totalHsl}` 
-        contenedorPalabra.appendChild(node);
-      
+    if (totalHsl > 0) {
+      const contenedorPalabra = document.querySelector(".palabras ul")
+      const node = document.createElement("li")
+      node.innerText = `colores reales - ${totalHsl}`
+      contenedorPalabra.appendChild(node);
+
     }
     await descargarResultados(lista);
   }
 
 
 
-  function ordenar(original){
+  function ordenar(original) {
     // Paso 1: Obtener claves y ordenarlas
     const clavesOrdenadas = Object.keys(original).sort((a, b) => {
       const itemA = original[a];
@@ -306,49 +351,49 @@
   }
 
 
-// Función para convertir HEX a HSL
-function hexToHSL(hex) {
-  // Quitar el # si lo tiene
-  hex = hex.replace(/^#/, '');
-  if (hex.length === 3) {
-    hex = hex.split('').map(c => c + c).join('');
-  }
-  const r = parseInt(hex.slice(0, 2), 16) / 255;
-  const g = parseInt(hex.slice(2, 4), 16) / 255;
-  const b = parseInt(hex.slice(4, 6), 16) / 255;
-
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h, s, l = (max + min) / 2;
-
-  if (max === min) {
-    h = s = 0; // gris
-  } else {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
-      case g: h = ((b - r) / d + 2); break;
-      case b: h = ((r - g) / d + 4); break;
+  // Función para convertir HEX a HSL
+  function hexToHSL(hex) {
+    // Quitar el # si lo tiene
+    hex = hex.replace(/^#/, '');
+    if (hex.length === 3) {
+      hex = hex.split('').map(c => c + c).join('');
     }
-    h /= 6;
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0; // gris
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+        case g: h = ((b - r) / d + 2); break;
+        case b: h = ((r - g) / d + 4); break;
+      }
+      h /= 6;
+    }
+    return { h: h * 360, s, l };
   }
-  return { h: h * 360, s, l };
-}
 
-//funcion para pasar los hex de 3 caracteres a 6
-function expandirHex(hex) {
-  // Asegúrate de que empiece con #
-  if (!hex.startsWith("#")) return hex;
+  //funcion para pasar los hex de 3 caracteres a 6
+  function expandirHex(hex) {
+    // Asegúrate de que empiece con #
+    if (!hex.startsWith("#")) return hex;
 
-  // Eliminar el #
-  const cleanHex = hex.slice(1);
+    // Eliminar el #
+    const cleanHex = hex.slice(1);
 
-  // Si es de 3 caracteres, duplicar cada uno
-  if (cleanHex.length === 3) {
-    return "#" + cleanHex.split("").map(c => c + c).join("");
+    // Si es de 3 caracteres, duplicar cada uno
+    if (cleanHex.length === 3) {
+      return "#" + cleanHex.split("").map(c => c + c).join("");
+    }
+
+    // Si ya es de 6 caracteres, devolver igual
+    return hex;
   }
-
-  // Si ya es de 6 caracteres, devolver igual
-  return hex;
-}
 </script>
