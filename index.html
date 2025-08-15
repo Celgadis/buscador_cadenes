@@ -1,5 +1,47 @@
-<input type="file" id="fileInput" multiple />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .card{
+      display: flex;
+      flex-direction: column;
+    }
+    .coincidencia{
+      display: flex;
+      width: 100%;
+      gap:30px
+    }
+    .muestra{
+      height: 20px;
+      width: 20px;
+      border: 2px solid black;
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <h3>Lista de archivos scss a revisar:</h3>
+  <input type="file" id="fileInput" multiple />  
+  <div class="resultado"></div>
+  <div class="molde">
+    <div class="card">
+      <div class="coincidencia"><span class="muestra"></span><span class="valor"></span><span class="contador"></span></div>
+      <div class="contenoedor-coincidencias">
+          <ul class="coincidencias">
+          </ul>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
+
+
 <script>
+  //expresiones regulares para separar rbg, variables, hexadecimales y el resto
   const listaRegex = [
     /rgb[^)]+[)]/,
     /\$[^; ]+/,
@@ -28,6 +70,7 @@
       await procesarArchivo(archivo);
     }
     await descargarResultados();
+    await mostrarResultados();
   });
 
   // Función que lee un archivo y busca las palabras clave línea por línea
@@ -50,11 +93,12 @@
           valor = valor[0].trim();
           let coincidencia = null;
           let regexIndex=0
+          //filtrado a traves de las regex
           for (const regex of listaRegex) {
             coincidencia = valor.match(regex)
             if (coincidencia) {
               coincidencia = coincidencia[0]
-              if(regexIndex==0){
+              if(regexIndex==0){//si es un color rgb se convierte a hex
                 coincidencia=reemplazarRgbPorHexRgb(coincidencia);
                 coincidencia=coincidencia.match(listaRegex[2])[0]
               }
@@ -63,19 +107,32 @@
             }
             regexIndex++
           }
-          
+          if(!coincidencia){
+            break;
+          }
+          //preparamos la clave de orden con valores hsl para poder ver colores similares juntos
+          let regexHex=/^#[0-9A-Fa-f]{3,6}$/;
+          console.log("linia",linea)
+          console.log("coincidencia",coincidencia)
+          let hsl=coincidencia.match(regexHex)?hexToHSL(coincidencia):null
+
           let existe=listaResultados.hasOwnProperty(coincidencia);
+          //si no se guardo esta coincidencia se crea, si no solo se aumenta el contador y se guarda la informacion de posicion
           if (!existe) {
             listaResultados[coincidencia] =   {
               valor: coincidencia,
               contador: 1,
-              coincidencias:[]
+              coincidencias:[],
+              tipo:regexIndex,
+              hsl:hsl
             }
             listaResultados[coincidencia].coincidencias.push({
                 linea:resultado,
                 archivo:archivo.name,
                 pos: i,
-                valor:linea
+                valor:linea,
+                tipo:regexIndex,
+                coincidenica:coincidencia
               });
           } else {
             listaResultados[coincidencia].contador++;
@@ -83,7 +140,9 @@
                 linea:resultado,
                 archivo:archivo.name,
                 pos: i,
-                valor:linea
+                valor:linea,
+                tipo:regexIndex,
+                coincidenica:coincidencia
               });
           }
 
@@ -142,4 +201,116 @@
       });
   }
 
+  async function mostrarResultados(){
+    const contenedor=document.querySelector(".resultado");
+    const lista=ordenar(listaResultados);
+    for(const coincidencia of Object.values(lista)){
+      const card=document.querySelector(".molde .card").cloneNode(true);
+      card.querySelector(".valor").innerText=coincidencia.valor;
+      let veces=coincidencia.contador==1?"vez":"veces";
+      card.querySelector(".contador").innerText=`encontrado ${coincidencia.contador} ${veces}`;
+      card.querySelector(".muestra").style.backgroundColor=coincidencia.valor
+      console.log(coincidencia);
+      for(const linea of coincidencia.coincidencias){
+        const nodo=document.createElement("li");
+        nodo.innerText=linea.linea
+        card.querySelector(".coincidencias").appendChild(nodo);
+      }
+      contenedor.appendChild(card);
+    }
+  }
+
+  /*function ordenar(original){
+    const clavesColores = Object.keys(original);
+    /*const clavesOrdenadas = Object.keys(original).sort();
+
+    // Paso 2: Crear un nuevo objeto con las claves ordenadas
+    const objetoOrdenado = {};
+
+    for (const clave of clavesOrdenadas) {
+      objetoOrdenado[clave] = original[clave];
+    }
+   // Ordenar por tono (Hue)
+    const clavesOrdenadas = clavesColores.sort((a.orden, b.orden) => {
+      const hslA = hexToHSL(a);
+      console.log(a)
+      console.log(b)
+      const hslB = hexToHSL(b);
+      return hslA.orden.h - hslB.orden.h;
+    });
+
+    // Paso 2: Crear un nuevo objeto con las claves ordenadas
+    const objetoOrdenado = {};
+
+    for (const clave of clavesOrdenadas) {
+      objetoOrdenado[clave] = original[clave];
+    }
+
+    return objetoOrdenado;
+  }*/
+
+  function ordenar(original){
+    // Paso 1: Obtener claves y ordenarlas
+    const clavesOrdenadas = Object.keys(original).sort((a, b) => {
+      const itemA = original[a];
+      const itemB = original[b];
+
+      const hslA = itemA.hsl;
+      const hslB = itemB.hsl;
+
+      const tieneHslA = hslA && typeof hslA.h === 'number';
+      const tieneHslB = hslB && typeof hslB.h === 'number';
+
+      // Priorizar los que tienen HSL
+      if (tieneHslA && !tieneHslB) return -1;
+      if (!tieneHslA && tieneHslB) return 1;
+
+      // Ambos tienen HSL → ordenar por h, s, l
+      if (tieneHslA && tieneHslB) {
+        if (hslA.h !== hslB.h) return hslA.h - hslB.h;
+        if (hslA.s !== hslB.s) return hslA.s - hslB.s;
+        return hslA.l - hslB.l;
+      }
+
+      // Ninguno tiene HSL → ordenar alfabéticamente
+      return a.localeCompare(b);
+    });
+
+    // Paso 2: Reconstruir objeto ordenado
+    const objetoOrdenado = {};
+    for (const clave of clavesOrdenadas) {
+      objetoOrdenado[clave] = original[clave];
+    }
+    return objetoOrdenado;
+  }
+
+
+// Función para convertir HEX a HSL
+function hexToHSL(hex) {
+  // Quitar el # si lo tiene
+  hex = hex.replace(/^#/, '');
+  if (hex.length === 3) {
+    hex = hex.split('').map(c => c + c).join('');
+  }
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+
+  if (max === min) {
+    h = s = 0; // gris
+  } else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+      case g: h = ((b - r) / d + 2); break;
+      case b: h = ((r - g) / d + 4); break;
+    }
+    h /= 6;
+  }
+  return { h: h * 360, s, l };
+}
 </script>
