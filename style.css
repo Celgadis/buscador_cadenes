@@ -1,0 +1,26 @@
+    .card {
+      display: flex;
+      flex-direction: column;
+     
+    }
+    .resultado{ display:flex;
+      flex-direction: column;
+      gap:20px;}
+
+    .coincidencia {
+      display: flex;
+      align-items: baseline;
+      width: 100%;
+      gap: 30px
+    }
+
+    .muestra {
+       gap:20px;
+      height: 20px;
+      width: 20px;
+      border: 2px solid black;
+      display: flex;
+    }
+    .molde{
+        display: none;
+    }
