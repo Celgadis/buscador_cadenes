@@ -55,7 +55,7 @@
               coincidencia = coincidencia[0]
               if(regexIndex==0){
                 coincidencia=reemplazarRgbPorHexRgb(coincidencia);
-                coincidencia=valor.match(listaRegex[2])
+                coincidencia=coincidencia.match(listaRegex[2])[0]
               }
               //console.log("coincidencia:", coincidencia)
               break;
@@ -63,23 +63,27 @@
             regexIndex++
           }
           
-          
-          /*if(clave.resultados[coincidencia]==undefined){
-              
-        }else{
-          contador=clave.resultados[coincidencia].contador;
-          console.log("trobat "+coincidencia);
-        }*/
           let existe=clave.resultados.hasOwnProperty(coincidencia);
           if (!existe) {
             clave.resultados[coincidencia] =   {
-              linea: resultado,
               valor: coincidencia,
-              contador: 1
+              contador: 1,
+              coincidencias:[]
             }
+            clave.resultados[coincidencia].coincidencias.push({
+                linea:resultado,
+                archivo:archivo.name,
+                pos: i,
+                valor:linea
+              });
           } else {
-            
             clave.resultados[coincidencia].contador++;
+            clave.resultados[coincidencia].coincidencias.push({
+                linea:resultado,
+                archivo:archivo.name,
+                pos: i,
+                valor:linea
+              });
           }
 
 
