@@ -3,7 +3,7 @@
   const listaRegex = [
     /rgb[^)]+[)]/,
     /\$[^; ]+/,
-    /#[^;^ ^)]+/,
+    /#[^;^ ^)^,]+/,
     /.{3,}/
   ];
 
@@ -19,6 +19,7 @@
       resultados: {}
     }];
   // const palabrasClave = ['color', 'border', 'fallo']; // Cambia esto según tus necesidades
+    const listaResultados={};
 
   document.getElementById('fileInput').addEventListener('change', async (event) => {
     const archivos = Array.from(event.target.files);
@@ -63,22 +64,22 @@
             regexIndex++
           }
           
-          let existe=clave.resultados.hasOwnProperty(coincidencia);
+          let existe=listaResultados.hasOwnProperty(coincidencia);
           if (!existe) {
-            clave.resultados[coincidencia] =   {
+            listaResultados[coincidencia] =   {
               valor: coincidencia,
               contador: 1,
               coincidencias:[]
             }
-            clave.resultados[coincidencia].coincidencias.push({
+            listaResultados[coincidencia].coincidencias.push({
                 linea:resultado,
                 archivo:archivo.name,
                 pos: i,
                 valor:linea
               });
           } else {
-            clave.resultados[coincidencia].contador++;
-            clave.resultados[coincidencia].coincidencias.push({
+            listaResultados[coincidencia].contador++;
+            listaResultados[coincidencia].coincidencias.push({
                 linea:resultado,
                 archivo:archivo.name,
                 pos: i,
@@ -108,7 +109,7 @@
   async function descargarResultados() {
 
     // 1. Convertimos el array en un string
-    const contenido = JSON.stringify(palabrasClave)
+    const contenido = JSON.stringify(listaResultados)
 
     // 2. Creamos un blob con tipo texto
     const blob = new Blob([contenido], { type: 'text/plain' });
