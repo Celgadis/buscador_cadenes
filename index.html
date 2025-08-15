@@ -60,7 +60,7 @@
         </ul>
       </div>
     </div>
-
+    <input type="button" value="modificar" class="descargar-modificacion">
   </div>
 </body>
 
@@ -76,6 +76,7 @@
     /.{3,}/
   ];
 
+
   const palabrasClave = [
     {
       palabra: "color:",
@@ -89,6 +90,7 @@
     }];
 
   const listaResultados = {};
+  //const listaIndices=[]; //listado con los indices de las claves del objeto, para facilitar su acceso
 
   document.getElementById('fileInput').addEventListener('change', async (event) => {
     const archivos = Array.from(event.target.files);
@@ -108,15 +110,15 @@
     const lineas = contenido.split('\n');
 
     console.log(`📄 Procesando archivo: ${archivo.name}`);
-
+    let id=0;
     for (let i = 0; i < lineas.length; i++) {
       const linea = lineas[i];
-      for (const clave of palabrasClave) {
-        let palabra = clave.palabra;
+      for (const item of palabrasClave) {
+        let palabra = item.palabra;
         if (linea.toLowerCase().includes(palabra.toLowerCase())) {
           let resultado = `[${archivo.name}] Línea ${i + 1}: ${linea}`;
           //console.log(resultado);
-          clave.contador++;
+          item.contador++;
           let valor = linea.split(":");
           valor = valor[1].split("\r");
           valor = valor[0].trim();
@@ -155,17 +157,20 @@
           // console.log("coincidencia",coincidencia)
           let hsl = coincidencia.match(regexHex) ? hexToHSL(coincidencia) : null
           console.log(listaResultados);
-          let existe = listaResultados.hasOwnProperty(coincidencia);
+          let clave=coincidencia
+          let existe = listaResultados.hasOwnProperty(clave);
           //si no se guardo esta coincidencia se crea, si no solo se aumenta el contador y se guarda la informacion de posicion
           if (!existe) {
-            listaResultados[coincidencia] = {
+            listaResultados[clave] = {
+              id:id,
               valor: coincidencia,
               contador: 1,
               coincidencias: [],
               tipo: regexIndex,
-              hsl: hsl
+              hsl: hsl,
+              modificar:false
             }
-            listaResultados[coincidencia].coincidencias.push({
+            listaResultados[clave].coincidencias.push({
               linea: resultado,
               archivo: archivo.name,
               pos: i,
@@ -175,9 +180,12 @@
               original: original,
               cambiado: cambiado
             });
+            //listaIndices.push(clave);
+            id++;
+            
           } else {
-            listaResultados[coincidencia].contador++;
-            listaResultados[coincidencia].coincidencias.push({
+            listaResultados[clave].contador++;
+            listaResultados[clave].coincidencias.push({
               linea: resultado,
               archivo: archivo.name,
               pos: i,
@@ -270,24 +278,33 @@
         totalHsl++
       }
       const card = document.querySelector(".molde .card").cloneNode(true);
+      card.dataset.id=coincidencia.valor;
       card.querySelector(".valor").innerText = coincidencia.valor;
       //colorpicker y input
       const picker=card.querySelector(".picker");
-      picker.id = coincidencia.valor;
+      //picker.id = coincidencia.valor.replace(/\s/g, "") ;
       picker.value = coincidencia.valor;
       console.log(picker.value)
       const hexinput=card.querySelector(".hexcolor");
       hexinput.value=picker.value
       const modificar=card.querySelector(".modificar");
+      modificar.dataset.id=coincidencia.valor;
       console.log(modificar)
       //eventos del picker y input
       picker.addEventListener("change",()=>{
         hexinput.value=picker.value;
         modificar.checked=true;
+        modificar.dispatchEvent(new Event("change"));
       })
       hexinput.addEventListener("focusout",()=>{
         picker.value=hexinput.value;
         modificar.checked=true;
+        modificar.dispatchEvent(new Event("change"));
+
+      })
+      modificar.addEventListener("change",()=>{
+        console.log("id",modificar.dataset.id)
+        marcarParaModificar(modificar.dataset.id);
       })
 
 
@@ -310,7 +327,8 @@
       contenedorPalabra.appendChild(node);
 
     }
-    await descargarResultados(lista);
+    //await descargarResultados(lista);
+    await descargarResultados(listaResultados);
   }
 
 
@@ -396,4 +414,62 @@
     // Si ya es de 6 caracteres, devolver igual
     return hex;
   }
+
+
+  function marcarParaModificar(clave){
+    console.log("id:",clave)
+    console.log("indice:",clave)
+    listaResultados[clave].modificar=document.querySelector(`.modificar[data-id="${clave}"]`).checked;
+  }
+
+
+  function listaModificados(){
+        // Filtrar y copiar solo los que tengan modificar: true
+    const soloModificados = [];
+
+    for (const clave in listaResultados) {
+      console.log("clave",clave)
+      if (listaResultados[clave].modificar === true) {
+        //soloModificados[clave] = original[clave];
+        for(const coincidencia of listaResultados[clave].coincidencias){
+          let nuevo;
+          let original
+          let nuevoColor=document.querySelector(`.card[data-id="${clave}"] .hexcolor` ).value;
+          if(coincidencia.cambiado){
+            nuevo=coincidencia.cambiado.replace(coincidencia.coincidencia,nuevoColor);
+          }else{
+            nuevo=nuevoColor
+          }
+          if(coincidencia.original){
+            original=coincidencia.original;
+          }else{
+            original=coincidencia.valor;
+          }
+          soloModificados.push({
+              archivo:coincidencia.archivo,
+              pos:coincidencia.pos,
+              original:original,
+              nuevo:nuevo
+            }) 
+        }
+      }
+    }
+
+    
+    let ordenados=soloModificados.sort((a, b) => {
+        // Primero comparamos por archivo
+        if (a.archivo < b.archivo) return -1;
+        if (a.archivo > b.archivo) return 1;
+
+        // Si los archivos son iguales, comparamos por posición
+        return a.pos - b.pos;
+    });
+    console.log(ordenados);
+    return ordenados;
+  }
+  
+  document.querySelector(".descargar-modificacion").addEventListener("click",()=>{
+    listaModificados();
+  })
+
 </script>
