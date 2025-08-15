@@ -75,7 +75,7 @@
     /#[^;^ ^)^,^!]{3,6}/,
     /.{3,}/
   ];
-
+   const ficheros = {};
 
   const palabrasClave = [
     {
@@ -107,6 +107,7 @@
   // Función que lee un archivo y busca las palabras clave línea por línea
   async function procesarArchivo(archivo) {
     const contenido = await leerArchivoComoTexto(archivo);
+    ficheros[archivo.name]=contenido;
     const lineas = contenido.split('\n');
 
     console.log(`📄 Procesando archivo: ${archivo.name}`);
@@ -469,7 +470,41 @@
   }
   
   document.querySelector(".descargar-modificacion").addEventListener("click",()=>{
-    listaModificados();
+    const contenidosModificados = modificarArchivos();
+     // 3. Ejemplo: descargar archivos modificados
+    for (const nombre in contenidosModificados) {
+      const blob = new Blob([contenidosModificados[nombre]], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = nombre;
+      link.click();
+    }
   })
 
+function modificarArchivos(){
+  const modificados = {};
+  const datosOrdenados=listaModificados();
+  for (const archivo in ficheros) {
+    console.log("archivo",archivo)
+    const lineas = ficheros[archivo].split('\n');
+
+    // Filtramos solo los cambios que aplican a este archivo
+    const cambios = datosOrdenados.filter(d => d.archivo === archivo);
+
+    for (const cambio of cambios) {
+      const linea = lineas[cambio.pos];
+
+      if (linea && linea.includes(cambio.original)) {
+        lineas[cambio.pos] = linea.replace(cambio.original, cambio.nuevo);
+      } else {
+        console.warn(`No se encontró "${cambio.original}" en la línea ${cambio.pos} de ${archivo}`);
+      }
+    }
+
+    // Guardamos el contenido modificado
+    modificados[archivo] = lineas.join('\n');
+  }
+
+  return modificados;
+}
 </script>
