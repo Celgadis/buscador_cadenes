@@ -48,13 +48,19 @@
           valor = valor[1].split("\r");
           valor = valor[0].trim();
           let coincidencia = null;
+          let regexIndex=0
           for (const regex of listaRegex) {
             coincidencia = valor.match(regex)
             if (coincidencia) {
               coincidencia = coincidencia[0]
+              if(regexIndex==0){
+                coincidencia=reemplazarRgbPorHexRgb(coincidencia);
+                coincidencia=valor.match(listaRegex[2])
+              }
               //console.log("coincidencia:", coincidencia)
               break;
             }
+            regexIndex++
           }
           
           
