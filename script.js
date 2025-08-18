@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * 
+     * funcion para convertir colores rgb a rgb con hex
      * @param texto string con la cadena del color rgb a transormar
      * @returns color en formato hexadecimal dentro del rgba se mantendra el alfa si esta especificado
      */
@@ -318,7 +318,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // Función para convertir HEX a HSL
+    /** 
+     *  Función para convertir HEX a HSL
+     * @param hex string con el codigo hexadecimal a transformar
+    */
     function hexToHSL(hex) {
         // Quitar el # si lo tiene
         hex = hex.replace(/^#/, '');
@@ -347,7 +350,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return { h: h * 360, s, l };
     }
 
-    //funcion para pasar los hex de 3 caracteres a 6
+    /**
+     * funcion para pasar los hex de 3 caracteres a 6
+     * @param {*} hex string con el codigo hexadecimal a tratar
+     * @returns string con el codigo hexadecimal del color en formato de 6 caracteres
+     */
     function expandirHex(hex) {
         // Asegúrate de que empiece con #
         if (!hex.startsWith("#")) return hex;
@@ -359,18 +366,25 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cleanHex.length === 3) {
             return "#" + cleanHex.split("").map(c => c + c).join("");
         }
-
         // Si ya es de 6 caracteres, devolver igual
         return hex;
     }
 
 
+    /**
+     * funcion para marcar en el objeto para que se guarde la modificacion del color
+     * @param {*} clave clave del objeto a modificar
+     */
     function marcarParaModificar(clave) {
 
         listaResultados[clave].modificar = document.querySelector(`.modificar[data-id="${clave}"]`).checked;
     }
 
 
+    /**
+     * funcion para crear el objeto con las modificaciones a aplicar
+     * @returns listado com las modificaciones a aplicar
+     */
     async function listaModificados() {
         // Filtrar y copiar solo los que tengan modificar: true
         const soloModificados = [];
@@ -378,7 +392,6 @@ document.addEventListener('DOMContentLoaded', function () {
         for (const clave in listaResultados) {
 
             if (listaResultados[clave].modificar === true) {
-                //soloModificados[clave] = original[clave];
                 for (const coincidencia of listaResultados[clave].coincidencias) {
                     let nuevo;
                     let original
@@ -429,6 +442,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     })
 
+    /**
+     * funcion para aplicar las modificaciones en los archivos guardados en memoria
+     * @returns array con los archivos modificados
+     */
     async function modificarArchivos() {
         const modificados = {};
         const datosOrdenados = await listaModificados();
