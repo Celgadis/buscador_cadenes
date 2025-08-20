@@ -1,4 +1,27 @@
 document.addEventListener('DOMContentLoaded', function () {
+
+    //palabras que se buscaran para filtrar
+    let palabrasClave = [
+        {
+            palabra: "color:",
+            contador: 0,
+        },
+        {
+            palabra: "border:",
+            contador: 0,
+        }];
+
+    //rellena el input de palabras
+    let tPalabras = document.querySelector(".text-palabras");
+    tPalabras.value = "";
+    palabrasClave.forEach((palabra) => {
+        if (tPalabras.value != "") {
+            tPalabras.value += ", ";
+        }
+        tPalabras.value += palabra.palabra;
+    })
+
+
     //expresiones regulares para separar rbg, variables, hexadecimales y el resto, en hexadecimales y rgb ignorara el alpha (en el rgb se controla mas adelante)
     const listaRegex = [
         /rgb[^)]+[)]/,
@@ -8,18 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ];
     const ficheros = {};
 
-    //palabras que se buscaran para filtrar
-    const palabrasClave = [
-        {
-            palabra: "color:",
-            contador: 0,
-            resultados: {}
-        },
-        {
-            palabra: "border:",
-            contador: 0,
-            resultados: {}
-        }];
+
 
     //lista con los resultados de de leer y tratar los datos, preparando todo lo necesario para las modificaciones
     const listaResultados = {};
@@ -27,6 +39,17 @@ document.addEventListener('DOMContentLoaded', function () {
     //evento del fileinput
     document.getElementById('fileInput').addEventListener('change', async (event) => {
         const archivos = Array.from(event.target.files);
+        //revisamos las palabras que se han escrito
+        palabrasClave = [];
+        tPalabras.value.split(",").forEach((palabra) => {
+            palabrasClave.push({
+                palabra: palabra.trim(),
+                contador: 0,
+            })
+        })
+        console.log(palabrasClave)
+
+
 
         for (const archivo of archivos) {
             await procesarArchivo(archivo);
@@ -136,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * Función para leer archivo como texto usando FileReader y promesa
      * @param archivo archivo cargado desde el input
      * @return texto del archivo
-     **/ 
+     **/
     function leerArchivoComoTexto(archivo) {
         return new Promise((resolve, reject) => {
             const lector = new FileReader();
