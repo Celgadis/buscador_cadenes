@@ -19,5 +19,5 @@ Una herramienta web interactiva que permite subir archivos `.scss`, detectar cad
 Puedes clonar el repositorio y abrir el archivo `index.html` directamente en tu navegador:
 
 ```bash
-git clone https://github.com/tuusuario/tu-repositorio.git
+git clone https://github.com/Celgadis/buscador_cadenes
 cd tu-repositorio
